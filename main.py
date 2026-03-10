@@ -57,11 +57,19 @@ class Ui(QtWidgets.QMainWindow):
             self.SkillList.addItem(skill_text)
             self.SkillInput.clear()
             self.SkillInput.setFocus()
+        
+        self.save_skills()
 
     def remove_skill(self, item):
         row = self.SkillList.row(item)
         self.SkillList.takeItem(row)
-        
+
+        self.save_skills()
+
+    def save_skills(self):
+        """Зберігає поточний список навичок у реєстр"""
+        skills = self.get_user_skills()
+        self.settings.setValue("skills", ",".join(skills))
     def get_user_skills(self):
         skills = []
         for index in range(self.SkillList.count()):
@@ -176,7 +184,15 @@ class Ui(QtWidgets.QMainWindow):
         index = self.ThemeComboBox.findText(saved_theme)
         if index >= 0:
             self.ThemeComboBox.setCurrentIndex(index)
-            
+        
+        self.SkillList.clear()
+        saved_skills_str = self.settings.value("skills", "")
+        
+        if saved_skills_str:
+            for skill in saved_skills_str.split(","):
+                if skill.strip():
+                    self.SkillList.addItem(skill.strip())
+
         self.apply_theme(saved_theme.lower())
 
     def save_settings(self):
