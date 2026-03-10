@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets, uic, QtCore
 from PyQt5.QtGui import *
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import Qt, QSettings
 import sys
 import os
 import qasync
@@ -12,6 +13,8 @@ import qdarktheme
 from data.category import categories
 from Services.job_manager import get_table_data
 from Services.statistics_service import calculate_salary_statistics
+from Services.email import send_email
+from helpers.email_helper import format_job_email
 from helpers.chart_helper import ChartHelper
 
 dirname = os.path.dirname(QtWidgets.__file__)
@@ -26,6 +29,8 @@ class Ui(QtWidgets.QMainWindow):
         super(Ui, self).__init__()
         uic.loadUi('views/main.ui', self)
 
+        self.settings = QSettings("MyCompany", "JobAggregator")
+
         self.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         self.tabWidget.setCurrentIndex(0)
 
@@ -33,9 +38,12 @@ class Ui(QtWidgets.QMainWindow):
         self.Submit.clicked.connect(self.on_find_job_clicked)
         self.SkillList.itemDoubleClicked.connect(self.remove_skill)
 
+        self.SaveButton.clicked.connect(self.save_settings)
+
         self.init_category_combobox()
-        
         self.chart_helper = ChartHelper(self.tabWidget, 1)
+
+        self.load_settings()
 
         self.showMaximized()
 
@@ -122,19 +130,76 @@ class Ui(QtWidgets.QMainWindow):
         else:
             QtWidgets.QMessageBox.warning(self, "Error", "There is no link for this vacancy")
 
-    def on_send_email_clicked(self, job_data):
-        job_title = job_data.get('title', 'Unknown')
-        company = job_data.get('company_name', 'Unknown')
-        QtWidgets.QMessageBox.information(
-            self, 
-            "Email Simulation", 
-            f"Тут буде логіка відправки email!\n\nГотуємо лист про вакансію:\n{job_title} в компанії {company}"
-        )
+    @qasync.asyncSlot()
+    async def on_send_email_clicked(self, job_data):
+        target_email = self.settings.value("email", "").strip()
+        
+        if not target_email:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Missing Email",
+                "Please configure your Email in the Settings tab first!"
+            )
+            self.tabWidget.setCurrentIndex(2)
+            return
 
+        subject, body = format_job_email(job_data)
+
+        try:
+            result = await send_email(to_email=target_email, subject=subject, body=body)
+
+            if result:
+                QtWidgets.QMessageBox.information(
+                    self,
+                    "Success",
+                    f"Email successfully sent to {target_email}!"
+                )
+            else:
+                QtWidgets.QMessageBox.critical(
+                    self,
+                    "Error",
+                    "Failed to send email"
+                )
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self,
+                "Error",
+                f"An unexpected error occurred:\n{str(e)}"
+            )
+
+    def load_settings(self):
+        saved_email = self.settings.value("email", "")
+        self.EmailInput.setText(saved_email)
+        
+        saved_theme = self.settings.value("theme", "Dark")
+        
+        index = self.ThemeComboBox.findText(saved_theme)
+        if index >= 0:
+            self.ThemeComboBox.setCurrentIndex(index)
+            
+        self.apply_theme(saved_theme.lower())
+
+    def save_settings(self):
+        email_text = self.EmailInput.text().strip()
+        selected_theme = self.ThemeComboBox.currentText()
+        
+        self.settings.setValue("email", email_text)
+        self.settings.setValue("theme", selected_theme)
+        
+        self.apply_theme(selected_theme.lower())
+        
+        QtWidgets.QMessageBox.information(self, "Settings", "Settings saved successfully!")
+
+    def apply_theme(self, theme_name):
+        app = QtWidgets.QApplication.instance()
+        if app:
+            app.setStyleSheet(qdarktheme.load_stylesheet(theme_name))
+
+            if hasattr(self, 'chart_helper'):
+                self.chart_helper.set_theme(theme_name)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    app.setStyleSheet(qdarktheme.load_stylesheet("dark"))
     
     loop = qasync.QEventLoop(app)
     asyncio.set_event_loop(loop)

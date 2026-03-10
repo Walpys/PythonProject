@@ -31,7 +31,7 @@ async def get_bulk_ai_rates(jobs_list, user_skills):
 
         response = await asyncio.to_thread(
             client.models.generate_content, 
-            model='gemini-2.5-flash', 
+            model='gemini-3.1-flash-lite-preview', 
             contents=prompt
         )
         
