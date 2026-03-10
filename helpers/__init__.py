@@ -1,1 +1,1 @@
-from .ai_match_rate import ai_match_rate
+from .ai_match_rate import get_bulk_ai_rates
