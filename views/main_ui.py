@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'd:\ВНУ\Спеціалізовані мови програмування\Job_agregator\views\main.ui'
+# Form implementation generated from reading ui file 'd:\ВНУ\Спеціалізовані мови програмування\PythonProject\views\main.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.11
 #
