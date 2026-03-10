@@ -1,0 +1,20 @@
+categories = {
+    "Software Development": "software-development",
+    "Customer Service": "customer-service",
+    "Design": "design",
+    "Marketing": "marketing",
+    "Sales / Business": "sales-business",
+    "Product": "product",
+    "Project Management": "project-management",
+    "AI / ML": "ai-ml",
+    "Data Analysis": "data",
+    "DevOps / Sysadmin": "devops",
+    "Finance": "finance",
+    "Human Resources": "human-resources",
+    "QA": "qa",
+    "Writing": "writing",
+    "Legal": "legal",
+    "Medical": "medical",
+    "Education": "education",
+    "All others": "all-others"
+}
